@@ -1,0 +1,41 @@
+// Backend: Express API
+const express = require("express");
+const cors = require("cors");
+const fs = require("fs");
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+const dataFile = "rifa.json";
+let participantes = [];
+
+// Carrega os dados se o arquivo existir
+if (fs.existsSync(dataFile)) {
+    participantes = JSON.parse(fs.readFileSync(dataFile));
+}
+
+// Adicionar participante
+app.post("/add", (req, res) => {
+    const { nome } = req.body;
+    if (!nome) return res.status(400).json({ error: "Nome obrigatório!" });
+    const numero = participantes.length + 1;
+    participantes.push({ nome, numero });
+    fs.writeFileSync(dataFile, JSON.stringify(participantes, null, 2));
+    res.json({ message: "Participante adicionado!", numero });
+});
+
+// Listar participantes
+app.get("/participantes", (req, res) => {
+    res.json(participantes);
+});
+
+// Realizar o sorteio
+app.get("/sorteio", (req, res) => {
+    if (participantes.length === 0) return res.status(400).json({ error: "Nenhum participante na rifa." });
+    const sorteado = participantes[Math.floor(Math.random() * participantes.length)];
+    res.json({ message: "Ganhador!", sorteado });
+});
+
+app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
